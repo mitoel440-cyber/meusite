@@ -12,23 +12,6 @@ body{
   background:#000;
 }
 
-body::before{
-  content:"";
-  position:fixed;
-  inset:0;
-  background:url('logo.jpg') center/cover no-repeat;
-  opacity:0.25;
-  z-index:-2;
-}
-
-body::after{
-  content:"";
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,0.75);
-  z-index:-1;
-}
-
 .container{
   max-width:900px;
   margin:auto;
@@ -38,12 +21,11 @@ body::after{
 h1{
   text-align:center;
   color:#00f0ff;
-  text-shadow:0 0 15px #00f0ff;
 }
 
 textarea{
   width:100%;
-  height:160px;
+  height:150px;
   margin-top:10px;
   padding:10px;
   background:#000;
@@ -57,24 +39,16 @@ button{
   background:#00f0ff;
   border:none;
   cursor:pointer;
-  font-weight:bold;
 }
 
 table{
   width:100%;
   margin-top:20px;
-  border-collapse:collapse;
 }
 
-th{
-  background:#00f0ff;
-  padding:10px;
-}
-
-td{
+td,th{
   padding:10px;
   text-align:center;
-  border-bottom:1px solid #333;
 }
 
 canvas{
@@ -91,37 +65,29 @@ canvas{
 <h1>🏆 XT FF PRO</h1>
 
 <h3>📌 Cadastro de Times</h3>
-<textarea id="teams"></textarea>
+<textarea id="teams" placeholder="LINE: França
+JOGADOR: Screw"></textarea>
 
 <h3>📊 Resultado da queda</h3>
 <textarea id="input"></textarea>
 
-<br>
 <button onclick="processar()">Adicionar queda</button>
 <button onclick="resetar()">Resetar</button>
 
-<h2>🏆 Ranking</h2>
-
-<table>
-<thead>
+<table border="1">
 <tr>
 <th>#</th>
 <th>Time</th>
 <th>Kills</th>
 <th>Pontos</th>
 </tr>
-</thead>
 <tbody id="ranking"></tbody>
 </table>
 
 <hr>
 
-<h2>🖼️ Banner</h2>
-
 <input type="file" id="img">
 <button onclick="gerar()">Gerar Banner</button>
-<button onclick="baixar()">Baixar</button>
-
 <canvas id="cv"></canvas>
 
 </div>
@@ -135,29 +101,30 @@ let killsTotal = {};
 
 function processar(){
 
-let teamsText = document.getElementById("teams").value.split("\n");
 let mapa = {};
+let linhas = document.getElementById("teams").value.split("\n");
 
-let lineAtual = "";
-teamsText.forEach(l=>{
+let timeAtual = "";
+
+linhas.forEach(l=>{
 l = l.trim();
 
 if(l.startsWith("LINE")){
-lineAtual = l.split(":")[1].trim();
+timeAtual = l.split(":")[1].trim();
 }
 
 if(l.startsWith("JOGADOR")){
 let nick = l.split(":")[1].trim().toLowerCase();
-mapa[nick] = lineAtual;
+mapa[nick] = timeAtual;
 }
 });
 
 let texto = document.getElementById("input").value.split("\n");
 
-let timeAtual = "";
+let time = "";
 let pos = 0;
 let kills = [];
-let representante = "";
+let timeFinal = "";
 
 texto.forEach(l=>{
 
@@ -166,9 +133,10 @@ if(l=="") return;
 
 if(!l.includes(":")){
 let partes = l.split(" ");
-timeAtual = partes[0];
+time = partes[0];
 pos = parseInt(partes[1]);
 kills = [];
+timeFinal = time;
 }else{
 let [nick,k] = l.split(":");
 nick = nick.trim().toLowerCase();
@@ -176,24 +144,21 @@ k = parseInt(k);
 
 kills.push(k);
 
+// 👇 AQUI CORRIGIDO
 if(mapa[nick]){
-representante = nick;
+timeFinal = mapa[nick];
 }
 }
 
 if(kills.length==4){
 
 let soma = kills.reduce((a,b)=>a+b,0);
-
-let time = mapa[representante] || timeAtual;
-
 let pts = soma + (tabela[pos]||0);
 
-total[time] = (total[time]||0)+pts;
-killsTotal[time] = (killsTotal[time]||0)+soma;
+total[timeFinal] = (total[timeFinal]||0)+pts;
+killsTotal[timeFinal] = (killsTotal[timeFinal]||0)+soma;
 
 kills=[];
-representante="";
 }
 
 });
@@ -210,15 +175,15 @@ let html="";
 rank.forEach(([t,p],i)=>{
 html+=`
 <tr>
-<td>${i+1}°</td>
+<td>${i+1}</td>
 <td>${t}</td>
-<td>${killsTotal[t]||0}</td>
+<td>${killsTotal[t]}</td>
 <td>${p}</td>
 </tr>
 `;
 });
 
-document.getElementById("ranking").innerHTML=html;
+document.getElementById("ranking").innerHTML = html;
 }
 
 function resetar(){
@@ -230,7 +195,7 @@ document.getElementById("ranking").innerHTML="";
 function gerar(){
 
 let file=document.getElementById("img").files[0];
-if(!file) return alert("Escolhe o banner");
+if(!file) return;
 
 let img=new Image();
 img.src=URL.createObjectURL(file);
@@ -249,23 +214,16 @@ let rank=Object.entries(total).sort((a,b)=>b[1]-a[1]);
 
 ctx.font=(img.width*0.03)+"px Arial";
 ctx.fillStyle="white";
-ctx.strokeStyle="black";
-ctx.lineWidth=4;
 
 let y=img.height*0.4;
-let esp=img.height*0.055;
+let esp=img.height*0.06;
 
 rank.forEach(([t,p],i)=>{
 
 let yy=y+(i*esp);
 
-ctx.strokeText(t,img.width*0.3,yy);
 ctx.fillText(t,img.width*0.3,yy);
-
-ctx.strokeText(killsTotal[t]||0,img.width*0.7,yy);
-ctx.fillText(killsTotal[t]||0,img.width*0.7,yy);
-
-ctx.strokeText(p,img.width*0.85,yy);
+ctx.fillText(killsTotal[t],img.width*0.7,yy);
 ctx.fillText(p,img.width*0.85,yy);
 
 });
@@ -273,14 +231,7 @@ ctx.fillText(p,img.width*0.85,yy);
 }
 }
 
-function baixar(){
-let link=document.createElement("a");
-link.download="resultado.png";
-link.href=document.getElementById("cv").toDataURL();
-link.click();
-}
-
 </script>
 
 </body>
-    </html>
+</html>
