@@ -39,16 +39,24 @@ button{
   background:#00f0ff;
   border:none;
   cursor:pointer;
+  font-weight:bold;
 }
 
 table{
   width:100%;
   margin-top:20px;
+  border-collapse:collapse;
 }
 
-td,th{
+th{
+  background:#00f0ff;
+  padding:10px;
+}
+
+td{
   padding:10px;
   text-align:center;
+  border-bottom:1px solid #333;
 }
 
 canvas{
@@ -64,30 +72,49 @@ canvas{
 
 <h1>🏆 XT FF PRO</h1>
 
-<h3>📌 Cadastro de Times</h3>
-<textarea id="teams" placeholder="LINE: França
-JOGADOR: Screw"></textarea>
+<!-- 🔥 AGORA TEM A ÁREA DE LINE -->
+<h3>📌 Cadastro de Times (LINE + JOGADOR)</h3>
+<textarea id="teams" placeholder="Ex:
+LINE: França
+JOGADOR: Screw
+
+LINE: Brasil
+JOGADOR: XPTO"></textarea>
 
 <h3>📊 Resultado da queda</h3>
-<textarea id="input"></textarea>
+<textarea id="input" placeholder="Ex:
+França 1
+Screw: 5
+A: 2
+B: 1
+C: 3"></textarea>
 
-<button onclick="processar()">Adicionar queda</button>
-<button onclick="resetar()">Resetar</button>
+<br>
+<button onclick="processar()">➕ Adicionar queda</button>
+<button onclick="resetar()">🔄 Resetar</button>
 
-<table border="1">
+<h2>🏆 Ranking</h2>
+
+<table>
+<thead>
 <tr>
 <th>#</th>
 <th>Time</th>
 <th>Kills</th>
 <th>Pontos</th>
 </tr>
+</thead>
 <tbody id="ranking"></tbody>
 </table>
 
 <hr>
 
+<h2>🖼️ Banner</h2>
+
 <input type="file" id="img">
-<button onclick="gerar()">Gerar Banner</button>
+<button onclick="gerar()">🎯 Gerar Banner</button>
+<button onclick="baixar()">⬇️ Baixar</button>
+
 <canvas id="cv"></canvas>
 
 </div>
@@ -121,10 +148,9 @@ mapa[nick] = timeAtual;
 
 let texto = document.getElementById("input").value.split("\n");
 
-let time = "";
+let timeFinal = "";
 let pos = 0;
 let kills = [];
-let timeFinal = "";
 
 texto.forEach(l=>{
 
@@ -133,10 +159,9 @@ if(l=="") return;
 
 if(!l.includes(":")){
 let partes = l.split(" ");
-time = partes[0];
+timeFinal = partes[0];
 pos = parseInt(partes[1]);
 kills = [];
-timeFinal = time;
 }else{
 let [nick,k] = l.split(":");
 nick = nick.trim().toLowerCase();
@@ -144,7 +169,7 @@ k = parseInt(k);
 
 kills.push(k);
 
-// 👇 AQUI CORRIGIDO
+// pega o time pelo representante
 if(mapa[nick]){
 timeFinal = mapa[nick];
 }
@@ -175,9 +200,9 @@ let html="";
 rank.forEach(([t,p],i)=>{
 html+=`
 <tr>
-<td>${i+1}</td>
+<td>${i+1}°</td>
 <td>${t}</td>
-<td>${killsTotal[t]}</td>
+<td>${killsTotal[t]||0}</td>
 <td>${p}</td>
 </tr>
 `;
@@ -195,7 +220,7 @@ document.getElementById("ranking").innerHTML="";
 function gerar(){
 
 let file=document.getElementById("img").files[0];
-if(!file) return;
+if(!file) return alert("Escolhe o banner");
 
 let img=new Image();
 img.src=URL.createObjectURL(file);
@@ -214,21 +239,35 @@ let rank=Object.entries(total).sort((a,b)=>b[1]-a[1]);
 
 ctx.font=(img.width*0.03)+"px Arial";
 ctx.fillStyle="white";
+ctx.strokeStyle="black";
+ctx.lineWidth=4;
 
 let y=img.height*0.4;
-let esp=img.height*0.06;
+let esp=img.height*0.055;
 
 rank.forEach(([t,p],i)=>{
 
 let yy=y+(i*esp);
 
+ctx.strokeText(t,img.width*0.3,yy);
 ctx.fillText(t,img.width*0.3,yy);
-ctx.fillText(killsTotal[t],img.width*0.7,yy);
+
+ctx.strokeText(killsTotal[t]||0,img.width*0.7,yy);
+ctx.fillText(killsTotal[t]||0,img.width*0.7,yy);
+
+ctx.strokeText(p,img.width*0.85,yy);
 ctx.fillText(p,img.width*0.85,yy);
 
 });
 
 }
+}
+
+function baixar(){
+let link=document.createElement("a");
+link.download="resultado.png";
+link.href=document.getElementById("cv").toDataURL();
+link.click();
 }
 
 </script>
