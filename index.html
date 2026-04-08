@@ -87,23 +87,39 @@ canvas{
   margin-top:20px;
 }
 
-/* LOGIN */
+/* LOGIN PRO */
 
 #loginTela{
   position:fixed;
   width:100%;
   height:100%;
-  background:black;
+  background: linear-gradient(45deg, black, #1a0000);
   display:flex;
   justify-content:center;
   align-items:center;
   flex-direction:column;
 }
 
+.loginTitulo{
+  font-size:30px;
+  color:red;
+  text-shadow:0 0 10px red,0 0 30px red;
+  margin-bottom:20px;
+}
+
 #loginTela input{
-  padding:10px;
+  padding:12px;
   margin:5px;
+  width:200px;
   border:none;
+  border-radius:5px;
+  background:#111;
+  color:white;
+  text-align:center;
+}
+
+#loginTela button{
+  width:200px;
 }
 
 </style>
@@ -111,13 +127,15 @@ canvas{
 
 <body>
 
+<!-- LOGIN -->
 <div id="loginTela">
-<h2>🔐 Acesso restrito</h2>
+<h2 class="loginTitulo">🔐 BELLADONNA ACCESS</h2>
 <input id="user" placeholder="Login">
 <input id="pass" type="password" placeholder="Senha">
-<button onclick="entrar()">Entrar</button>
+<button onclick="entrar()">ENTRAR</button>
 </div>
 
+<!-- SITE -->
 <div id="site" style="display:none;">
 
 <div class="container">
@@ -162,17 +180,34 @@ canvas{
 
 <script>
 
+// LOGIN
+
 function entrar(){
 let u = document.getElementById("user").value;
 let p = document.getElementById("pass").value;
 
 if(u==="kauaz1nx" && p==="vanuza35"){
+
+localStorage.setItem("logado","sim");
+
 document.getElementById("loginTela").style.display="none";
 document.getElementById("site").style.display="block";
+
 }else{
 alert("Acesso negado!");
 }
+
 }
+
+// AUTO LOGIN
+window.onload = function(){
+if(localStorage.getItem("logado")==="sim"){
+document.getElementById("loginTela").style.display="none";
+document.getElementById("site").style.display="block";
+}
+}
+
+// SISTEMA
 
 const tabela = {1:12,2:9,3:8,4:7,5:6,6:5,7:4,8:3,9:2,10:1,11:0,12:0};
 
