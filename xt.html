@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>XT FF PRO</title>
+
+<style>
+
+body{
+  margin:0;
+  font-family:Arial;
+  color:white;
+  background:#000;
+}
+
+/* LOGO FUNDO REAL */
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  background:url('logo.jpg') center/cover no-repeat;
+  opacity:0.25;
+  z-index:-2;
+}
+
+/* ESCURECER */
+body::after{
+  content:"";
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.75);
+  z-index:-1;
+}
+
+.container{
+  max-width:900px;
+  margin:auto;
+  padding:20px;
+}
+
+/* TITULO */
+h1{
+  text-align:center;
+  color:#00f0ff;
+  text-shadow:0 0 15px #00f0ff;
+}
+
+/* INPUT */
+textarea{
+  width:100%;
+  height:180px;
+  margin-top:10px;
+  padding:10px;
+  background:#000;
+  color:white;
+  border:1px solid #00f0ff;
+}
+
+/* BOTÕES */
+button{
+  margin-top:10px;
+  padding:10px;
+  background:#00f0ff;
+  border:none;
+  cursor:pointer;
+  font-weight:bold;
+}
+
+/* TABELA */
+table{
+  width:100%;
+  margin-top:20px;
+  border-collapse:collapse;
+}
+
+th{
+  background:#00f0ff;
+  padding:10px;
+}
+
+td{
+  padding:10px;
+  text-align:center;
+  border-bottom:1px solid #333;
+}
+
+canvas{
+  width:100%;
+  margin-top:20px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>🏆 XT FF PRO</h1>
+
+<h3>📊 Resultado da queda</h3>
+<textarea id="input"></textarea>
+
+<br>
+<button onclick="processar()">Adicionar queda</button>
+<button onclick="resetar()">Resetar</button>
+
+<h2>🏆 Ranking</h2>
+
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Time</th>
+<th>Kills</th>
+<th>Pontos</th>
+</tr>
+</thead>
+<tbody id="ranking"></tbody>
+</table>
+
+<hr>
+
+<h2>🖼️ Banner</h2>
+
+<input type="file" id="img">
+<button onclick="gerar()">Gerar Banner</button>
+<button onclick="baixar()">Baixar</button>
+
+<canvas id="cv"></canvas>
+
+</div>
+
+<script>
+
+const tabela = {1:12,2:9,3:8,4:7,5:6,6:5,7:4,8:3,9:2,10:1,11:0,12:0};
+
+let total = {};
+let killsTotal = {};
+
+function processar(){
+
+let texto = document.getElementById("input").value.split("\n");
+
+let time = "";
+let pos = 0;
+let kills = [];
+
+texto.forEach(l => {
+
+l = l.trim();
+if(l=="") return;
+
+if(!l.includes("-")){
+let p = l.split(" ");
+time = p[0];
+pos = parseInt(p[1]);
+kills = [];
+}else{
+let k = parseInt(l.split("-")[1]);
+if(!isNaN(k)) kills.push(k);
+}
+
+if(kills.length==4){
+let soma = kills.reduce((a,b)=>a+b,0);
+let pts = soma + (tabela[pos]||0);
+
+total[time] = (total[time]||0)+pts;
+killsTotal[time] = (killsTotal[time]||0)+soma;
+kills=[];
+}
+
+});
+
+atualizar();
+}
+
+function atualizar(){
+
+let rank = Object.entries(total).sort((a,b)=>b[1]-a[1]);
+
+let html="";
+
+rank.forEach(([t,p],i)=>{
+html+=`
+<tr>
+<td>${i+1}°</td>
+<td>${t}</td>
+<td>${killsTotal[t]||0}</td>
+<td>${p}</td>
+</tr>
+`;
+});
+
+document.getElementById("ranking").innerHTML=html;
+}
+
+function resetar(){
+total={};
+killsTotal={};
+document.getElementById("ranking").innerHTML="";
+}
+
+function gerar(){
+
+let file=document.getElementById("img").files[0];
+if(!file) return alert("Escolhe o banner");
+
+let img=new Image();
+img.src=URL.createObjectURL(file);
+
+img.onload=function(){
+
+let c=document.getElementById("cv");
+let ctx=c.getContext("2d");
+
+c.width=img.width;
+c.height=img.height;
+
+ctx.drawImage(img,0,0);
+
+let rank=Object.entries(total).sort((a,b)=>b[1]-a[1]);
+
+ctx.font=(img.width*0.03)+"px Arial";
+ctx.fillStyle="white";
+ctx.strokeStyle="black";
+ctx.lineWidth=4;
+
+let y=img.height*0.4;
+let esp=img.height*0.055;
+
+rank.forEach(([t,p],i)=>{
+
+let yy=y+(i*esp);
+
+ctx.strokeText(t,img.width*0.3,yy);
+ctx.fillText(t,img.width*0.3,yy);
+
+ctx.strokeText(killsTotal[t]||0,img.width*0.7,yy);
+ctx.fillText(killsTotal[t]||0,img.width*0.7,yy);
+
+ctx.strokeText(p,img.width*0.85,yy);
+ctx.fillText(p,img.width*0.85,yy);
+
+});
+
+}
+}
+
+function baixar(){
+let link=document.createElement("a");
+link.download="resultado.png";
+link.href=document.getElementById("cv").toDataURL();
+link.click();
+}
+
+</script>
+
+</body>
+</html>
