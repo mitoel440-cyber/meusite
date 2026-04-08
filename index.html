@@ -5,6 +5,7 @@
 <title>XT FF PRO</title>
 
 <style>
+
 body{
   margin:0;
   font-family:Arial;
@@ -20,7 +21,7 @@ body{
 
 h1{
   text-align:center;
-  color:#00f0ff;
+  color:#ff2a2a;
 }
 
 textarea{
@@ -30,16 +31,16 @@ textarea{
   padding:10px;
   background:#000;
   color:white;
-  border:1px solid #00f0ff;
+  border:1px solid red;
 }
 
 button{
   margin-top:10px;
   padding:10px;
-  background:#00f0ff;
+  background:red;
   border:none;
   cursor:pointer;
-  font-weight:bold;
+  color:white;
 }
 
 table{
@@ -48,21 +49,17 @@ table{
   border-collapse:collapse;
 }
 
-th{
-  background:#00f0ff;
+td,th{
   padding:10px;
-}
-
-td{
-  padding:10px;
-  text-align:center;
   border-bottom:1px solid #333;
+  text-align:center;
 }
 
 canvas{
   width:100%;
   margin-top:20px;
 }
+
 </style>
 </head>
 
@@ -72,26 +69,15 @@ canvas{
 
 <h1>🏆 XT FF PRO</h1>
 
-<!-- 🔥 AGORA TEM A ÁREA DE LINE -->
-<h3>📌 Cadastro de Times (LINE + JOGADOR)</h3>
-<textarea id="teams" placeholder="Ex:
-LINE: França
-JOGADOR: Screw
-
-LINE: Brasil
-JOGADOR: XPTO"></textarea>
+<h3>📋 Times (LINE e representante)</h3>
+<textarea id="times"></textarea>
 
 <h3>📊 Resultado da queda</h3>
-<textarea id="input" placeholder="Ex:
-França 1
-Screw: 5
-A: 2
-B: 1
-C: 3"></textarea>
+<textarea id="input"></textarea>
 
 <br>
-<button onclick="processar()">➕ Adicionar queda</button>
-<button onclick="resetar()">🔄 Resetar</button>
+<button onclick="processar()">Adicionar queda</button>
+<button onclick="resetar()">Resetar</button>
 
 <h2>🏆 Ranking</h2>
 
@@ -112,8 +98,8 @@ C: 3"></textarea>
 <h2>🖼️ Banner</h2>
 
 <input type="file" id="img">
-<button onclick="gerar()">🎯 Gerar Banner</button>
-<button onclick="baixar()">⬇️ Baixar</button>
+<button onclick="gerar()">Gerar Banner</button>
+<button onclick="baixar()">Baixar</button>
 
 <canvas id="cv"></canvas>
 
@@ -125,65 +111,63 @@ const tabela = {1:12,2:9,3:8,4:7,5:6,6:5,7:4,8:3,9:2,10:1,11:0,12:0};
 
 let total = {};
 let killsTotal = {};
+let mapaTimes = {};
+
+function carregarTimes(){
+  let linhas = document.getElementById("times").value.split("\n");
+  let atual = "";
+
+  linhas.forEach(l=>{
+    if(l.startsWith("LINE:")){
+      atual = l.replace("LINE:","").trim();
+    }
+    if(l.startsWith("JOGADOR:")){
+      let nick = l.replace("JOGADOR:","").trim();
+      mapaTimes[nick] = atual;
+    }
+  });
+}
 
 function processar(){
 
-let mapa = {};
-let linhas = document.getElementById("teams").value.split("\n");
-
-let timeAtual = "";
-
-linhas.forEach(l=>{
-l = l.trim();
-
-if(l.startsWith("LINE")){
-timeAtual = l.split(":")[1].trim();
-}
-
-if(l.startsWith("JOGADOR")){
-let nick = l.split(":")[1].trim().toLowerCase();
-mapa[nick] = timeAtual;
-}
-});
+carregarTimes();
 
 let texto = document.getElementById("input").value.split("\n");
 
-let timeFinal = "";
+let time = "";
 let pos = 0;
 let kills = [];
 
-texto.forEach(l=>{
+texto.forEach(l => {
 
 l = l.trim();
 if(l=="") return;
 
 if(!l.includes(":")){
-let partes = l.split(" ");
-timeFinal = partes[0];
-pos = parseInt(partes[1]);
+let p = l.split(" ");
+time = p[0];
+pos = parseInt(p[1]);
 kills = [];
 }else{
-let [nick,k] = l.split(":");
-nick = nick.trim().toLowerCase();
-k = parseInt(k);
+let nick = l.split(":")[0].trim();
+let k = parseInt(l.split(":")[1]);
 
-kills.push(k);
-
-// pega o time pelo representante
-if(mapa[nick]){
-timeFinal = mapa[nick];
+if(!time && mapaTimes[nick]){
+  time = mapaTimes[nick];
 }
+
+if(!isNaN(k)) kills.push(k);
 }
 
 if(kills.length==4){
-
 let soma = kills.reduce((a,b)=>a+b,0);
 let pts = soma + (tabela[pos]||0);
 
-total[timeFinal] = (total[timeFinal]||0)+pts;
-killsTotal[timeFinal] = (killsTotal[timeFinal]||0)+soma;
+total[time] = (total[time]||0)+pts;
+killsTotal[time] = (killsTotal[time]||0)+soma;
 
 kills=[];
+time="";
 }
 
 });
@@ -208,7 +192,7 @@ html+=`
 `;
 });
 
-document.getElementById("ranking").innerHTML = html;
+document.getElementById("ranking").innerHTML=html;
 }
 
 function resetar(){
@@ -237,26 +221,32 @@ ctx.drawImage(img,0,0);
 
 let rank=Object.entries(total).sort((a,b)=>b[1]-a[1]);
 
-ctx.font=(img.width*0.03)+"px Arial";
-ctx.fillStyle="white";
-ctx.strokeStyle="black";
-ctx.lineWidth=4;
+ctx.font = "38px Arial";
+ctx.fillStyle = "white";
+ctx.strokeStyle = "black";
+ctx.lineWidth = 4;
 
-let y=img.height*0.4;
-let esp=img.height*0.055;
+// 🔥 POSIÇÕES AJUSTADAS PRO SEU BANNER
+let xEquipe = 420;
+let xKills = 900;
+let xPontos = 1080;
+
+let yStart = 430;
+let espaco = 65;
 
 rank.forEach(([t,p],i)=>{
 
-let yy=y+(i*esp);
+let y = yStart + (i * espaco);
+let kills = killsTotal[t] || 0;
 
-ctx.strokeText(t,img.width*0.3,yy);
-ctx.fillText(t,img.width*0.3,yy);
+ctx.strokeText(t, xEquipe, y);
+ctx.fillText(t, xEquipe, y);
 
-ctx.strokeText(killsTotal[t]||0,img.width*0.7,yy);
-ctx.fillText(killsTotal[t]||0,img.width*0.7,yy);
+ctx.strokeText(kills, xKills, y);
+ctx.fillText(kills, xKills, y);
 
-ctx.strokeText(p,img.width*0.85,yy);
-ctx.fillText(p,img.width*0.85,yy);
+ctx.strokeText(p, xPontos, y);
+ctx.fillText(p, xPontos, y);
 
 });
 
